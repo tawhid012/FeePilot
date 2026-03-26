@@ -27,12 +27,40 @@ export async function adminFetch<T>(payload: Record<string, unknown>): Promise<T
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    // Some errors may return non-JSON; ignore and fall back to status text.
+  }
   if (!response.ok) {
-    throw new Error(data?.error || "Admin request failed");
+    throw new Error(data?.error || `Admin request failed (${response.status})`);
   }
 
   return data as T;
+}
+
+export async function adminLogin(username: string, password: string) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+    },
+    body: JSON.stringify({ username, password }),
+  });
+
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    // ignore
+  }
+  if (!response.ok) {
+    throw new Error(data?.error || `Login failed (${response.status})`);
+  }
+
+  return data as { token: string };
 }
 
 export async function adminLogin(username: string, password: string) {
